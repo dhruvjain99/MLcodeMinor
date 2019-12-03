@@ -6,9 +6,14 @@ import time
 import dlib
 import cv2
 import datetime
+from picamera.array import PiRGBArray
+from picamera import PiCamera
 
 #start web cam
-webcam = VideoStream(src=0).start()
+webcam = PiCamera()
+webcam.resolution = (640, 480)
+webcam.framerate = 32
+rawCapture = PiRGBArray(webcam, size=(640, 480))
 time.sleep(1.0)
 
 landmarks = dlib.shape_predictor("model/shape_predictor_68_face_landmarks.dat")
@@ -21,14 +26,15 @@ normal = False
 normal_count = 0.0
 normal_eye_ratio = 0
 
-frame = webcam.read()
-frame = imutils.resize(frame, width=450)
-img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+#frame = webcam.read()
+for frame in webcam.capture_continuous(rawCapture, Format="bgr", use_video_port=True):
+    frame = imutils.resize(frame, width=450)
+    img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
- # insert information text to video frame
-font = cv2.FONT_HERSHEY_SIMPLEX
-input_frame = img
-
+    # insert information text to video frame
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    input_frame = img
+    break
 
 
 
@@ -40,9 +46,9 @@ def eye_ratio(eye):
     width = abs(eye[0][0]-eye[3][0])
 
     return avg_height/width
-while True:
+for frame in webcam.capture_continuous(rawCapture, Format="bgr", use_video_port=True):
     #get the image corresponding to a frame
-    frame = webcam.read()
+    # frame = webcam.read()
     frame = imutils.resize(frame, width=450)
     img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = face_recognition(img, 0)
@@ -123,3 +129,4 @@ while True:
             cv2.destroyAllWindows()
             webcam.stop()
             break
+    rawCapture.truncate(0)
